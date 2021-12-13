@@ -2,15 +2,8 @@ package org.emeritus.gamemanager;
 
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -61,7 +54,7 @@ public class GameManagerController {
      * it should map to "/move"
      * it should wrap the Map<String,Boolean> response in a ResponseEntity
      * and it should respond with 200 when the move is legal and  400 (bad request) if it isn't.
-     * The Map<String, Boolean> that is returned is the return value from a call to
+     * The Map<String, String> that is returned is the return value from a call to
      * game.getBoard().move(start, end)
      * It takes a Map<String,String> as its argument, those strings are the number of the start and end squares.
      * You can see sample behavior by posting to
@@ -73,9 +66,25 @@ public class GameManagerController {
      *  "end":"18"
      *  }
      */
-    public Map<String, Boolean> postMove(Map<String,String> json) {
+    public Map<String, String> postMove(Map<String,String> json) {
         //Annotate this method as needed and add code to match the behavior at the URL above.
         Game game = new Game(null, null);
         return game.getBoard().move(Integer.parseInt(json.get("start")),Integer.parseInt(json.get("end")));
+    }
+
+    /* This endpoint is called by the client to get the lastMove and is used to wait for the opponents move. 
+     * it should map to "/lastmove/{game_id}"
+     * it should wrap the Move response in a ResponseEntity
+     * and it should respond with 200 when gameId is valid and  404 (not found) if it isn't.
+     * The Move object that is returned is the return value from a call to
+     * game.getBoard().getLastMove()
+     * It takes no arguments.
+     * You can see sample behavior by getting
+     * https://checker-game-manager.herokuapp.com/api/play/lastmove/{gameId}
+     */
+    public Move getLastMove(UUID gameId) {
+        Game game = new Game(null, null);
+        //Annotate this method as needed and add code to match the behavior at the URL above.
+        return game.getBoard().getLastMove();
     }
 }
