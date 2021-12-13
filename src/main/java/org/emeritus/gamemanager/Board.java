@@ -10,14 +10,13 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.var;
 
-/* This class keeps track of the board and the game state.  
- * You should not need to change this code!!
- */
-
 public class Board {
 
     @Getter
-    private ArrayList<Square> boardList; //This contains the board(its a collection of Squares)
+    private ArrayList<Square> boardList;
+
+    @Getter @Setter
+    private Move lastMove;
 
     @Getter @Setter 
     private Color turn; //here we keep track of whose turn it is
@@ -108,7 +107,7 @@ public class Board {
            startSquare.getBottomLeft().getBottomLeft().getName() == end ) return startSquare.getBottomLeft().getName(); //Move is jumping lower left
         else if(startSquare.getBottomRight() != null &&
                 startSquare.getBottomRight().getBottomRight() != null &&
-                startSquare.getBottomRight().getBottomRight().getName() == end) startSquare.getBottomRight().getName(); //Move is jumping lower right
+                startSquare.getBottomRight().getBottomRight().getName() == end) return startSquare.getBottomRight().getName(); //Move is jumping lower right
         return -1;
     }
 
@@ -204,6 +203,7 @@ public class Board {
 
     public Board(String boardState) {
         boardList = new ArrayList<>();
+        lastMove = new Move();
         boardList.add(new Square(0)); //add a place holder for the 0 position (since checkers boards are numbered from 1)
         this.turn = Color.RED;
         populateBoard(boardState); //place checkers on the appropriate squares
@@ -227,18 +227,22 @@ public class Board {
         return output.toString();
     }
 
-    public Map<String,Boolean> move(int start, int end) {
+    public Map<String,String> move(int start, int end) {
         final String legalMove = "legalMove";
         final String additionalJumps = "additionalJumps";
         final String gameOver = "gameOver";
+        final String jump = "jump";
+        final String setTurn = "setTurn";
         ArrayList<Integer> thisMove = new ArrayList<>();
-        HashMap<String, Boolean> returnData = new HashMap<>();
+        HashMap<String, String> returnData = new HashMap<>();
         thisMove.add(start);
         thisMove.add(end); 
         ArrayList<ArrayList<Integer>> legalJumps = getLegalJumps();
-        returnData.put(legalMove, false);
-        returnData.put(additionalJumps, false);
-        returnData.put(gameOver, false);
+        returnData.put(legalMove, "false");
+        returnData.put(additionalJumps, "false");
+        returnData.put(gameOver, "false");
+        returnData.put(jump, "-1");
+        returnData.put(setTurn, String.valueOf(this.turn));
         // If there are legalJumps, and this move isn't one of them then return Illegal Move
         if(!legalJumps.isEmpty() && !legalJumps.contains(thisMove)) {
             return returnData;
@@ -248,7 +252,14 @@ public class Board {
            startIsLegal(start) &&
            endIsLegal(start,end)) {
                //If we're inside this if, then thisMove is legal, so let's make our move.
+               lastMove.setStart(start);
+               lastMove.setEnd(end);
+               lastMove.setColor(String.valueOf(turn));
                int jumped = isJump(start,end); //check and see if thisMove is a jump, if it is then jumped holds the square we jumped over.
+               lastMove.setJump(jumped);
+               lastMove.setAdditionalJumps(false);
+               lastMove.setGameOver(false);
+               returnData.replace(jump,String.valueOf(jumped));
                boardList.get(end).setChecker(boardList.get(start).getChecker()); //put the checker on the ending square.
                boardList.get(start).setChecker(null); //remove the checker from the beginning square.
                if(jumped != -1) boardList.get(jumped).setChecker(null); //if a jump happened then remove the opponents checker.
@@ -257,10 +268,11 @@ public class Board {
             //check if there are any legal jumps from our ending location
             if(jumped != -1) {
                 legalJumps = getLegalJumps();
-                for(var jump:legalJumps) {
-                    if(jump.get(0) == end){
-                        returnData.replace(additionalJumps, true);
-                        returnData.replace(legalMove, true);
+                for(var legalJump:legalJumps) {
+                    if(legalJump.get(0) == end){
+                        returnData.replace(additionalJumps, "true");
+                        returnData.replace(legalMove, "true");
+                        lastMove.setAdditionalJumps(true);
                         return returnData;
                     } 
 
@@ -268,20 +280,24 @@ public class Board {
             }            
             if(turn==Color.BLACK) turn = Color.RED; //flip the turn to the other player.
             else turn = Color.BLACK;
+            returnData.replace(setTurn, String.valueOf(turn));
             boolean checkerFound = false;
             for(var square:boardList){
                 if(square.getChecker() != null && square.getChecker().getColor() == turn) {
                     checkerFound = true;
                 }
             }
-            if(!checkerFound) returnData.replace(gameOver, true);
-            returnData.replace(legalMove, true);
+            if(!checkerFound){
+                returnData.replace(gameOver, "true");
+                lastMove.setGameOver(true);
+            } 
+            returnData.replace(legalMove, "true");
             return returnData;
         }
         else {
-            returnData.put("legalMove", false);
-            returnData.put("additionalJumps", false);
-            returnData.put("gameOver", false);
+            returnData.put("legalMove", "false");
+            returnData.put("additionalJumps", "false");
+            returnData.put("gameOver", "false");
             return returnData;
         } 
     }
